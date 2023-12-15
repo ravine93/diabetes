@@ -1,0 +1,93 @@
+import pandas as pd #importando bibliotecas
+from matplotlib import pyplot as plt #importando bibliotecas
+from sklearn.model_selection import train_test_split #importando bibliotecas
+
+diabetes = pd.read_csv('/workspaces/diabetes/diabetes.csv') #incluindo biblioteca
+diabetes.head() #retorna as primeiras linhas do dataset
+
+features = ['Pregnancies','PlasmaGlucose','DiastolicBloodPressure','TricepsThickness','SerumInsulin','BMI','DiabetesPedigree','Age'] #selecionando features de interesse
+label = 'Diabetic' #entitulando gráfico
+X, y = diabetes[features].values, diabetes[label].values #organizando dados nos gráficos
+for n in range(0,4): #organizando dados nos gráficos
+    print(f"Patient {str(n+1)}, \n  Features: {list(X[n])} \n  Label: {y[n]}") #organizando dados nos gráficos
+
+features = ['Pregnancies','PlasmaGlucose','DiastolicBloodPressure','TricepsThickness','SerumInsulin','BMI','DiabetesPedigree','Age']
+for col in features:
+    diabetes.boxplot(column=col, by='Diabetic', figsize=(6,6))
+    plt.title(col)
+plt.show() #organizando linhas e colunas nos graficos
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= 0.3, random_state= 0) #separando quantidade de dados para treino e para teste
+print (f'X_train: {X_train.shape} \nX_test: {X_test.shape} \ny_train: {y_train.shape} \ny_test: {y_test.shape}')
+
+from sklearn.linear_model import LogisticRegression
+reg = 0.01
+model = LogisticRegression(C=1/reg, solver="liblinear").fit(X_train, y_train)
+print (model)
+
+predictions = model.predict(X_test)
+print('Predicted labels: ', predictions)
+print('Actual labels:    ' ,y_test)
+
+from sklearn.metrics import accuracy_score
+print(f"Accuracy score: {accuracy_score(y_test, predictions)}")
+
+from sklearn.metrics import classification_report
+print(classification_report(y_test, predictions))
+from sklearn.metrics import precision_score, recall_score
+print("Overall Precision:",precision_score(y_test, predictions))
+print("Overall Recall:",recall_score(y_test, predictions))
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, predictions)
+print (cm)
+y_scores = model.predict_proba(X_test)
+print(y_scores)
+from sklearn.metrics import roc_curve
+from sklearn.metrics import confusion_matrix
+fpr, tpr, thresholds = roc_curve(y_test, y_scores[:,1])
+fig = plt.figure(figsize=(6, 6))
+plt.plot([0, 1], [0, 1], 'k--')
+plt.plot(fpr, tpr)
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.show()
+from sklearn.metrics import roc_auc_score
+auc = roc_auc_score(y_test,y_scores[:,1])
+print('AUC: ' + str(auc))
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
+import numpy as np
+numeric_features = [0,1,2,3,4,5,6]
+numeric_transformer = Pipeline(steps=[
+    ('scaler', StandardScaler())])
+categorical_features = [7]
+categorical_transformer = Pipeline(steps=[
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))])
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_transformer, numeric_features),
+        ('cat', categorical_transformer, categorical_features)])
+pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+                           ('logregressor', LogisticRegression(C=1/reg, solver="liblinear"))])
+model = pipeline.fit(X_train, (y_train))
+print (model)
+predictions = model.predict(X_test)
+y_scores = model.predict_proba(X_test)
+cm = confusion_matrix(y_test, predictions)
+print ('Confusion Matrix:\n',cm, '\n')
+print('Accuracy:', accuracy_score(y_test, predictions))
+print("Overall Precision:",precision_score(y_test, predictions))
+print("Overall Recall:",recall_score(y_test, predictions))
+auc = roc_auc_score(y_test,y_scores[:,1])
+print('AUC: ' + str(auc))
+fpr, tpr, thresholds = roc_curve(y_test, y_scores[:,1])
+fig = plt.figure(figsize=(6, 6))
+plt.plot([0, 1], [0, 1], 'k--')
+plt.plot(fpr, tpr)
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.show()
